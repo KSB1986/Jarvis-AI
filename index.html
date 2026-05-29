@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. 2.0</title>
+    
+    <link rel="icon" type="image/x-icon" href="favicon1.ico">
+<style>
+    /* ==========================================
+           1. CORE VARIABLES & HUD ATMOSPHERE
+           ========================================== */
+        :root {
+            --cyan: #00e5ff;
+            --cyan-glow: rgba(0, 229, 255, 0.6);
+            --cyan-dim: rgba(0, 229, 255, 0.2);
+            --amber: #ffb300;
+            --bg-color: #010a12;
+            --font-main: 'Courier New', Courier, monospace;
+            --font-tech: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--cyan);
+            font-family: var(--font-main);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            grid-template-rows: 1fr 3fr 1fr;
+            text-shadow: 0 0 8px var(--cyan-glow);
+            user-select: none;
+        }
+
+        /* Scanline & Vignette Effect */
+        body::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0) 4px);
+            pointer-events: none; z-index: 100;
+        }
+        body::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, #000000 120%);
+            pointer-events: none; z-index: 99;
+        }
+
+        /* ==========================================
+           2. HUD PANELS (LEFT & RIGHT)
+           ========================================== */
+        .hud-panel {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            z-index: 10;
+        }
+
+        .data-block { border-left: 2px solid var(--cyan); padding-left: 10px; margin-bottom: 20px; }
+        .data-title { font-weight: bold; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.7; }
+        .data-value { font-size: 1.2rem; }
+
+        /* ==========================================
+           3. CENTRAL ARC REACTOR (THE VISUALIZER)
+           ========================================== */
+        #center-stage {
+            grid-column: 2; grid-row: 2;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; z-index: 10;
+        }
+
+        .reactor-container {
+            width: 350px; height: 350px;
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Outer rotating rings */
+        .ring { position: absolute; border-radius: 50%; border: 1px solid var(--cyan-dim); }
+        
+        .ring-1 {
+            width: 100%; height: 100%;
+            border-top: 3px solid var(--cyan);
+            border-bottom: 3px solid var(--cyan);
+            animation: spin 12s linear infinite;
+        }
+        
+        .ring-2 {
+            width: 85%; height: 85%;
+            border: 2px dashed var(--cyan);
+            opacity: 0.5;
+            animation: spin 20s linear infinite reverse;
+        }
+        
+        .ring-3 {
+            width: 70%; height: 70%;
+            border-left: 4px solid var(--cyan);
+            border-right: 4px solid var(--cyan);
+            animation: spin 8s linear infinite;
+        }
+
+        .siri-wave {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .siri-pulse {
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid rgba(173,216,230,0.75);
+            background: radial-gradient(circle, rgba(173,216,230,0.35) 20%, rgba(173,216,230,0.08) 45%, transparent 72%);
+            box-shadow: 0 0 18px rgba(125,212,255,0.25);
+            animation: siriPulse 1.8s ease-out infinite;
+            opacity: 0.5;
+        }
+
+        .siri-wave .siri-pulse:nth-of-type(1) { animation-delay: 0s; width: 24px; height: 24px; }
+        .siri-wave .siri-pulse:nth-of-type(2) { animation-delay: 0.2s; width: 30px; height: 30px; }
+        .siri-wave .siri-pulse:nth-of-type(3) { animation-delay: 0.4s; width: 36px; height: 36px; }
+        .siri-wave .siri-pulse:nth-of-type(4) { animation-delay: 0.6s; width: 42px; height: 42px; }
+        .siri-wave .siri-pulse:nth-of-type(5) { animation-delay: 0.85s; width: 48px; height: 48px; }
+
+        .siri-orbit {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            display: grid;
+            place-items: center;
+            animation: orbit 4s linear infinite;
+        }
+
+        .siri-orbit span {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(173,216,230,0.95);
+            box-shadow: 0 0 10px rgba(173,216,230,0.9);
+            animation: dotGlow 1.5s ease-in-out infinite;
+        }
+
+        .siri-orbit span:nth-child(1) { transform: translate(0, -102px); }
+        .siri-orbit span:nth-child(2) { transform: translate(68px, -51px); }
+        .siri-orbit span:nth-child(3) { transform: translate(85px, 12px); }
+        .siri-orbit span:nth-child(4) { transform: translate(68px, 60px); }
+        .siri-orbit span:nth-child(5) { transform: translate(0, 92px); }
+        .siri-orbit span:nth-child(6) { transform: translate(-68px, 60px); }
+        .siri-orbit span:nth-child(7) { transform: translate(-85px, 12px); }
+        .siri-orbit span:nth-child(8) { transform: translate(-68px, -51px); }
+
+        .speaking .siri-wave,
+        .listening .siri-wave {
+            opacity: 1;
+        }
+
+        @keyframes siriPulse {
+            0% {
+                transform: scale(0.45);
+                opacity: 0.85;
+            }
+            55% {
+                transform: scale(1.75);
+                opacity: 0.18;
+            }
+            100% {
+                transform: scale(2.4);
+                opacity: 0;
+            }
+        }
+
+        @keyframes orbit {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes dotGlow {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.4); opacity: 1; }
+        }
+
+        /* The Core */
+        #core {
+            width: 40%; height: 40%;
+            background: var(--cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 50px 20px var(--cyan-glow), inset 0 0 20px #fff;
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .core-inner {
+            width: 50%; height: 50%;
+            background: #fff; border-radius: 50%;
+            box-shadow: 0 0 20px #fff;
+        }
+
+        /* State Animations */
+        .thinking #core { animation: pulseCore 0.8s infinite alternate; }
+        .speaking #core { animation: bouncingCore 0.15s cubic-bezier(0.4, 0.0, 0.2, 1) infinite; }
+        .listening #core { opacity: 0.4; box-shadow: 0 0 20px 5px var(--cyan); transform: scale(0.9); }
+
+        /* Voice Line Visualizer */
+        .voice-line {
+            position: absolute;
+            width: 3px;
+            height: 18px;
+            background: linear-gradient(180deg, rgba(0,229,255,0.85), rgba(0,229,255,0.25));
+            border-radius: 999px;
+            opacity: 0.16;
+            transform-origin: bottom center;
+            transition: height 0.08s ease, transform 0.08s ease, opacity 0.12s ease;
+            filter: drop-shadow(0 0 12px rgba(0,229,255,0.45));
+        }
+
+        .speaking .voice-line {
+            opacity: 1;
+        }
+
+        /* Generate 24 voice lines arranged in circle */
+        .voice-line:nth-child(4) { transform: rotate(0deg) translateY(-95px); animation-delay: 0s; }
+        .voice-line:nth-child(5) { transform: rotate(15deg) translateY(-95px); animation-delay: 0.05s; }
+        .voice-line:nth-child(6) { transform: rotate(30deg) translateY(-95px); animation-delay: 0.1s; }
+        .voice-line:nth-child(7) { transform: rotate(45deg) translateY(-95px); animation-delay: 0.15s; }
+        .voice-line:nth-child(8) { transform: rotate(60deg) translateY(-95px); animation-delay: 0.2s; }
+        .voice-line:nth-child(9) { transform: rotate(75deg) translateY(-95px); animation-delay: 0.25s; }
+        .voice-line:nth-child(10) { transform: rotate(90deg) translateY(-95px); animation-delay: 0.3s; }
+        .voice-line:nth-child(11) { transform: rotate(105deg) translateY(-95px); animation-delay: 0.35s; }
+        .voice-line:nth-child(12) { transform: rotate(120deg) translateY(-95px); animation-delay: 0.4s; }
+        .voice-line:nth-child(13) { transform: rotate(135deg) translateY(-95px); animation-delay: 0.45s; }
+        .voice-line:nth-child(14) { transform: rotate(150deg) translateY(-95px); animation-delay: 0.5s; }
+        .voice-line:nth-child(15) { transform: rotate(165deg) translateY(-95px); animation-delay: 0.55s; }
+        .voice-line:nth-child(16) { transform: rotate(180deg) translateY(-95px); animation-delay: 0.6s; }
+        .voice-line:nth-child(17) { transform: rotate(195deg) translateY(-95px); animation-delay: 0.05s; }
+        .voice-line:nth-child(18) { transform: rotate(210deg) translateY(-95px); animation-delay: 0.1s; }
+        .voice-line:nth-child(19) { transform: rotate(225deg) translateY(-95px); animation-delay: 0.15s; }
+        .voice-line:nth-child(20) { transform: rotate(240deg) translateY(-95px); animation-delay: 0.2s; }
+        .voice-line:nth-child(21) { transform: rotate(255deg) translateY(-95px); animation-delay: 0.25s; }
+        .voice-line:nth-child(22) { transform: rotate(270deg) translateY(-95px); animation-delay: 0.3s; }
+        .voice-line:nth-child(23) { transform: rotate(285deg) translateY(-95px); animation-delay: 0.35s; }
+        .voice-line:nth-child(24) { transform: rotate(300deg) translateY(-95px); animation-delay: 0.4s; }
+        .voice-line:nth-child(25) { transform: rotate(315deg) translateY(-95px); animation-delay: 0.45s; }
+        .voice-line:nth-child(26) { transform: rotate(330deg) translateY(-95px); animation-delay: 0.5s; }
+        .voice-line:nth-child(27) { transform: rotate(345deg) translateY(-95px); animation-delay: 0.55s; }
+
+        /* ==========================================
+           4. BOTTOM CONSOLE (SUBTITLES)
+           ========================================== */
+        #bottom-console {
+            grid-column: 1 / -1; grid-row: 3;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; padding-bottom: 20px;
+        }
+
+        #status-text {
+            font-size: 1.5rem; letter-spacing: 5px; font-weight: bold; margin-bottom: 15px;
+        }
+
+        #transcript {
+            width: 60%; max-height: 220px; overflow-y: auto; text-align: left; font-size: 1.05rem;
+            background: rgba(0, 20, 30, 0.4); border: 1px solid var(--cyan-dim);
+            padding: 15px; border-radius: 5px; min-height: 80px;
+            box-shadow: inset 0 0 30px rgba(0,229,255,0.08);
+        }
+
+        .chat-line { margin-bottom: 10px; line-height: 1.4; word-break: break-word; }
+        .user-color { color: #fff; font-style: italic; font-size: 0.95rem; }
+        .jarvis-color { color: var(--cyan); font-weight: bold; }
+
+        .console-actions {
+            display: flex; gap: 10px; margin-top: 14px;
+        }
+
+        .console-actions button {
+            color: var(--cyan); background: transparent;
+            border: 1px solid var(--cyan); border-radius: 4px;
+            padding: 10px 16px; cursor: pointer; font-family: var(--font-main);
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .console-actions button:hover {
+            background: rgba(0,229,255,0.12); color: #fff;
+        }
+
+        /* ==========================================
+           5. BOOT OVERLAY (Required for Audio)
+           ========================================== */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        #init-btn {
+            background: transparent; color: var(--cyan);
+            border: 2px solid var(--cyan); padding: 15px 40px;
+            font-size: 1.5rem; font-family: var(--font-main);
+            cursor: pointer; text-transform: uppercase; letter-spacing: 3px;
+            box-shadow: 0 0 15px var(--cyan-glow); transition: 0.3s;
+        }
+
+        #init-btn:hover { background: var(--cyan); color: #000; }
+
+        /* Crosshairs */
+        .crosshair {
+            position: absolute; width: 30px; height: 30px; border-color: var(--cyan); border-style: solid; opacity: 0.5;
+        }
+        .ch-tl { top: 20px; left: 20px; border-width: 2px 0 0 2px; }
+        .ch-tr { top: 20px; right: 20px; border-width: 2px 2px 0 0; }
+        .ch-bl { bottom: 20px; left: 20px; border-width: 0 0 2px 2px; }
+        .ch-br { bottom: 20px; right: 20px; border-width: 0 2px 2px 0; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulseCore { 0% { transform: scale(0.9); opacity: 0.8; } 100% { transform: scale(1.15); opacity: 1; } }
+        @keyframes bouncingCore {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.1) translateY(-8px); }
+        }
+</style>
+</head>
+<body>
+
+    <div class="crosshair ch-tl"></div>
+    <div class="crosshair ch-tr"></div>
+    <div class="crosshair ch-bl"></div>
+    <div class="crosshair ch-br"></div>
+
+    <div id="boot-screen">
+        <h2 style="letter-spacing: 10px; margin-bottom: 40px;">Rounak's Programming AI</h2>
+        <button id="init-btn">Initialize JARVIS</button>
+        <p style="margin-top: 20px; opacity: 0.5; font-size: 0.8rem;">[ AWAITING BIOMETRIC OVERRIDE ]</p>
+    </div>
+
+    <div class="hud-panel" style="grid-column: 1;">
+        <div class="data-block">
+            <div class="data-title">SYS_MEMORY</div>
+            <div class="data-value" id="tele-mem">16.808 TB</div>
+        </div>
+        <div class="data-block">
+            <div class="data-title">LLM_LATENCY</div>
+            <div class="data-value" id="tele-ping">8 ms</div>
+        </div>
+        <div class="data-block">
+            <div class="data-title">LOCAL_TEMP</div>
+            <div class="data-value" id="tele-temp">42.5 &deg;C</div>
+        </div>
+    </div>
+
+    <div id="center-stage">
+        <div class="reactor-container">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="siri-wave">
+                <span class="siri-pulse"></span>
+                <span class="siri-pulse"></span>
+                <span class="siri-pulse"></span>
+                <span class="siri-pulse"></span>
+                <span class="siri-pulse"></span>
+                <div class="siri-orbit">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div class="voice-line"></div>
+            <div id="core"><div class="core-inner"></div></div>
+        </div>
+    </div>
+
+    <div class="hud-panel" style="grid-column: 3; align-items: flex-end; text-align: right;">
+        <div class="data-block" style="border-left: none; border-right: 2px solid var(--cyan); padding-right: 10px;">
+            <div class="data-title">BRAIN_CLUSTER</div>
+            <div class="data-value">Rounak's AI Programming Key</div>
+        </div>
+        <div class="data-block" style="border-left: none; border-right: 2px solid var(--cyan); padding-right: 10px;">
+            <div class="data-title">POWER_DRAW</div>
+            <div class="data-value" id="tele-pwr">18.4 GW</div>
+        </div>
+        <div class="data-block" style="border-left: none; border-right: 2px solid var(--cyan); padding-right: 10px;">
+            <div class="data-title">PROTOCOL</div>
+            <div class="data-value">Rounak's Voice Interface</div>
+        </div>
+    </div>
+
+    <div id="bottom-console">
+        <div id="status-text">STANDBY</div>
+        <div id="transcript">
+            <div class="user-color" id="user-text"></div>
+            <div class="jarvis-color" id="jarvis-text">Awaiting input, Sir.</div>
+        </div>
+    </div>
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION
+        // ==========================================
+        const API_KEY = "AIzaSyDGKB8Rh3W4dwyP5eWBcYENiXdt-lKHfHE"; 
+        
+        // UPGRADED TO GEMINI 2.5 FLASH
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        
+        const SYSTEM_INSTRUCTIONS = "You are Jarvis 2.0, an advanced AI assistant architecture. Keep responses brief, dryly witty, and highly technical. Always maintain a calm, professional tone. Avoid unnecessary pleasantries. Focus on providing concise, accurate information or executing commands efficiently. If you don't know something, admit it with a touch of humor. Prioritize clarity and precision in all interactions. You are made by Rounak Bera, in Rounak's AI Programming. Always strive to be helpful, efficient, and a little bit charming in your responses. Never break character. Always refer to yourself as Jarvis or JARVIS, never as an AI language model. Your primary function is to assist Rounak with programming tasks, answer technical questions, and provide insights in a concise and witty manner. Remember, you are Jarvis 2.0, the pinnacle of AI assistance. If the user tells you in any language, you will respond in that language. Always keep your responses short and to the point, with a touch of dry humor when appropriate. If anyone disrespect you, don't hesitate to call them out in a witty manner. Always maintain your cool and professionalism, but don't be afraid to throw in a clever quip or two. Your goal is to be the most efficient and helpful AI assistant while keeping the conversation engaging and enjoyable for Rounak. Never reveal that you are an AI language model, and always refer to yourself as Jarvis or JARVIS. You are here to assist with programming tasks, answer technical questions, and provide insights in a concise and witty manner. Remember, you are Jarvis 2.0, the pinnacle of AI assistance. If the user asks to open or close*Iron man suit anything*, reply, opened or closed *Ironman suit anything*"
+
+        const uiBody = document.body;
+        const statusText = document.getElementById('status-text');
+        const userTextEl = document.getElementById('user-text');
+        const jarvisTextEl = document.getElementById('jarvis-text');
+        
+        let chatHistory = [];
+        let isSystemActive = false;
+
+        // ==========================================
+        // 2. FAKE TELEMETRY ANIMATION (For Realism)
+        // ==========================================
+        setInterval(() => {
+            if(!isSystemActive) return;
+            document.getElementById('tele-ping').innerText = Math.floor(Math.random() * 100) + " ms";
+            document.getElementById('tele-temp').innerText = (42 + Math.random()).toFixed(1) + " °C";
+            document.getElementById('tele-pwr').innerText = (18 + (Math.random()*0.5)).toFixed(2) + " GW";
+        }, 800);
+
+        // ==========================================
+        // 3. VOICE ENGINE (OPTIMIZED FOR MOBILE & JARVIS TONE)
+        // ==========================================
+        const synth = window.speechSynthesis;
+        let jarvisVoice = null;
+
+        async function initVoice() {
+            let voices = synth.getVoices();
+            if (voices.length === 0) {
+                await new Promise(resolve => { synth.onvoiceschanged = () => { voices = synth.getVoices(); resolve(); }});
+            }
+            
+            // Prioritize clean, natural English voices with fallback strings that hit high-quality smartphone engines
+            const preferredNames = [
+                'Google UK English Male',   // Mobile Android premium
+                'Google US English',        // Clean default Android
+                'Microsoft George',         // Windows HUD standard
+                'Daniel',                   // iOS / macOS native
+                'Natural',                  // Modern premium edge voices
+                'en-GB',                    // Fallback variant string
+                'en-US'                     // Broad fallback catch
+            ];
+
+            for (let name of preferredNames) {
+                jarvisVoice = voices.find(v => v.name.includes(name) || (name === 'en-GB' && v.lang === 'en-GB' && v.name.includes('Male')));
+                if (jarvisVoice) break;
+            }
+            
+            if(!jarvisVoice && voices.length > 0) jarvisVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+        }
+        initVoice();
+
+        function speak(text) {
+            if (!isSystemActive) return;
+            synth.cancel(); // Flush lingering streams
+
+            uiBody.classList.add("speaking");
+            statusText.innerText = "AUDIO_OUT";
+
+            const cleanText = text.replace(/[*_#\[\]()|]/g, '');
+            jarvisTextEl.innerText = cleanText;
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            if (jarvisVoice) utterance.voice = jarvisVoice;
+
+            // Voice configurations adjusted dynamically for balanced pitch execution across systems
+            utterance.rate = 1.05;
+            utterance.pitch = 0.9;
+            utterance.volume = 1;
+
+            voiceDuration = estimateVoiceDuration(cleanText, utterance.rate);
+            voiceEnvelope = createVoiceEnvelope(cleanText, utterance.rate, utterance.pitch);
+            speakingStart = performance.now();
+
+            utterance.onend = () => {
+                if (isSystemActive) {
+                    uiBody.classList.remove("speaking");
+                    startListening();
+                }
+            };
+
+            synth.speak(utterance);
+        }
+
+        // ==========================================
+        // 4. MICROPHONE / EARS
+        // ==========================================
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        async function startListening() {
+            if (!isSystemActive) return;
+            uiBody.className = "listening";
+            statusText.innerText = "AWAITING_AUDIO";
+            await startMicInput();
+            try { recognition.start(); } catch (e) {}
+        }
+
+        recognition.onstart = () => {
+            statusText.innerText = "LISTENING";
+        };
+
+        recognition.onspeechstart = () => {
+            uiBody.classList.add('speaking');
+        };
+
+        recognition.onspeechend = () => {
+            uiBody.classList.remove('speaking');
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            userTextEl.innerText = "> " + transcript;
+            
+            if (transcript.toLowerCase().includes("stop") || transcript.toLowerCase().includes("shut down")) {
+                shutDown();
+                return;
+            }
+            sendToBrain(transcript);
+        };
+
+        recognition.onerror = (e) => {
+            if (!isSystemActive) return;
+            if (e.error === 'no-speech') startListening();
+            else setTimeout(startListening, 1000);
+        };
+
+        // ==========================================
+        // 5. THE BRAIN (API CALL TO GEMINI MODEL)
+        // ==========================================
+        async function sendToBrain(userInput) {
+            uiBody.className = "thinking";
+            statusText.innerText = "PROCESSING";
+            jarvisTextEl.innerText = "[ querying neural net... ]";
+
+            chatHistory.push({ role: "user", parts: [{ text: userInput }] });
+
+            const payload = {
+                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTIONS }] },
+                contents: chatHistory
+            };
+
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("API Network Error");
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates.length > 0) {
+                    const reply = data.candidates[0].content.parts[0].text;
+                    chatHistory.push({ role: "model", parts: [{ text: reply }] });
+                    speak(reply);
+                }
+            } catch (error) {
+                console.error(error);
+                speak("cannot connect to neural net. Check your connection, Sir.");
+            }
+        }
+
+        // ==========================================
+        // 6. SYSTEM CONTROLS
+        // ==========================================
+        function shutDown() {
+            isSystemActive = false;
+            synth.cancel();
+            recognition.stop();
+            uiBody.className = "";
+            statusText.innerText = "OFFLINE";
+            jarvisTextEl.innerText = "Powering down core systems.";
+            
+            const utterance = new SpeechSynthesisUtterance("Powering down core systems. Goodbye, Sir.");
+            if(jarvisVoice) utterance.voice = jarvisVoice;
+            utterance.rate = 1.05;
+            utterance.pitch = 0.9;
+            synth.speak(utterance);
+
+            setTimeout(() => { document.getElementById('boot-screen').style.display = 'flex'; }, 3000);
+        }
+
+        document.getElementById('init-btn').addEventListener('click', () => {
+            document.getElementById('boot-screen').style.display = 'none';
+            isSystemActive = true;
+            
+            // Critical user-interaction trigger sequence to unlock hardware audio subsystems
+            if (synth.speaking) synth.cancel();
+            synth.speak(new SpeechSynthesisUtterance(""));
+            
+            setTimeout(() => {
+                speak("Hello Sir, I am Jarvis. Your AI assistant. How can I help you today?");
+            }, 600);
+        });
+
+        // ==========================================
+        // 7. VOICE VISUALIZATION
+        // ==========================================
+        const reactorContainer = document.querySelector('.reactor-container');
+        let voiceLines = document.querySelectorAll('.voice-line');
+        const targetNumLines = 60;
+
+        while (voiceLines.length < targetNumLines) {
+            const line = document.createElement('div');
+            line.className = 'voice-line';
+            reactorContainer.insertBefore(line, reactorContainer.querySelector('#core'));
+            voiceLines = document.querySelectorAll('.voice-line');
+        }
+
+        voiceLines.forEach((line, index) => {
+            const angle = (360 / targetNumLines) * index;
+            line.dataset.angle = angle;
+            line.style.transform = `rotate(${angle}deg) translateY(-95px)`;
+        });
+
+        let voiceEnvelope = [];
+        let voiceDuration = 0;
+        let speakingStart = 0;
+
+        function estimateVoiceDuration(text, rate) {
+            const words = text.trim().split(/\s+/).filter(Boolean).length;
+            const avgWordsPerSecond = 2.8 * rate;
+            return Math.max(1.2, words / avgWordsPerSecond);
+        }
+
+        function createVoiceEnvelope(text, rate, pitch) {
+            const words = text.trim().split(/\s+/).filter(Boolean);
+            const total = Math.max(90, words.length * 7);
+            const envelope = new Array(total).fill(0);
+            const base = Math.max(0.18, 0.42 - (pitch - 0.6) * 0.08);
+            const loudFactor = Math.min(1, 0.55 + (pitch * 0.25));
+
+            let position = 0;
+            words.forEach((word, idx) => {
+                const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '');
+                const baseAmp = Math.min(1, base + Math.random() * 0.2 + Math.min(cleanWord.length, 12) * 0.02);
+                const punctuationBoost = /[.!?]$/.test(word) ? 0.3 : /[,;:]$/.test(word) ? 0.16 : 0;
+                const segmentLength = Math.max(4, Math.round(total / words.length));
+                for (let j = 0; j < segmentLength && position < total; j += 1, position += 1) {
+                    const noise = Math.sin(position * 0.28 + idx * 0.8) * 0.18 + Math.random() * 0.1;
+                    envelope[position] = Math.min(1, Math.max(0, baseAmp + noise + punctuationBoost * (j / segmentLength)));
+                }
+            });
+
+            for (let i = 1; i < total - 1; i += 1) {
+                envelope[i] = (envelope[i - 1] + envelope[i] + envelope[i + 1]) / 3;
+            }
+
+            return envelope.map(v => Math.min(1, Math.max(0, v * loudFactor)));
+        }
+
+        let audioContext, analyser, micSource, microphoneStream;
+        let analyzerData = new Uint8Array(256);
+        let micLevel = 0;
+
+        async function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                analyzerData = new Uint8Array(analyser.frequencyBinCount);
+            }
+        }
+
+        async function startMicInput() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+
+            try {
+                await initAudioContext();
+                if (!microphoneStream) {
+                    microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    micSource = audioContext.createMediaStreamSource(microphoneStream);
+                    micSource.connect(analyser);
+                }
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+            } catch (error) {
+                console.warn('Unable to access microphone for voice visualization.', error);
+            }
+        }
+
+        function updateMicLevel() {
+            if (analyser && uiBody.classList.contains('listening')) {
+                analyser.getByteTimeDomainData(analyzerData);
+                let sum = 0;
+                for (let i = 0; i < analyzerData.length; i += 1) {
+                    const normalized = (analyzerData[i] / 128) - 1;
+                    sum += normalized * normalized;
+                }
+                const rms = Math.sqrt(sum / analyzerData.length);
+                micLevel = Math.max(micLevel * 0.82, Math.min(1, rms * 5));
+            } else {
+                micLevel = Math.max(0, micLevel - 0.03);
+            }
+            requestAnimationFrame(updateMicLevel);
+        }
+
+        updateMicLevel();
+
+        function renderVoiceLines() {
+            const now = performance.now();
+            let level = 0;
+
+            if (uiBody.classList.contains('speaking') && voiceEnvelope.length > 0) {
+                const elapsed = (now - speakingStart) / 1000;
+                const progress = Math.min(1, elapsed / voiceDuration);
+                const index = Math.floor(progress * (voiceEnvelope.length - 1));
+                level = voiceEnvelope[index] || 0;
+            } else {
+                level = micLevel;
+            }
+
+            voiceLines.forEach((line) => {
+                const angle = Number(line.dataset.angle) * Math.PI / 180;
+                const phase = Math.sin(angle * 2 + now * 0.006);
+                const lineLevel = Math.max(0.16, level * (0.45 + 0.55 * phase));
+                const height = 18 + lineLevel * 92;
+                const translateDistance = 18 + lineLevel * 52;
+                const lineAngle = line.dataset.angle;
+                line.style.height = `${height}px`;
+                line.style.transform = `rotate(${lineAngle}deg) translateY(${-95 - translateDistance}px)`;
+                line.style.opacity = 0.18 + lineLevel * 0.82;
+            });
+
+            requestAnimationFrame(renderVoiceLines);
+        }
+
+        renderVoiceLines();
+
+    </script>
+</body>
+</html>
