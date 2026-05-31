@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benic AI HUD</title>
+    <title>JARVIS 2.0</title>
     
     <link rel="icon" type="image/x-icon" href="favicon1.ico">
 <style>
@@ -324,7 +324,7 @@
     <div class="crosshair ch-br"></div>
 
     <div id="boot-screen">
-        <h2 style="letter-spacing: 10px; margin-bottom: 20px;">Benic Core Architecture</h2>
+        <h2 style="letter-spacing: 10px; margin-bottom: 20px;">Jarvis Core Architecture</h2>
         <input id="key-input" type="password" placeholder="Enter Gemini API Key..." value="AIzaSyDGKB8Rh3W4dwyP5eWBcYENiXdt-lKHfHE">
         <button id="init-btn">Initialize System</button>
         <p style="margin-top: 20px; opacity: 0.5; font-size: 0.8rem;">[ AWAITING CRITICAL BIOMETRIC OVERRIDE ]</p>
@@ -374,7 +374,7 @@
     <div class="hud-panel" style="grid-column: 3; align-items: flex-end; text-align: right;">
         <div class="data-block" style="border-left: none; border-right: 2px solid var(--cyan); padding-right: 10px;">
             <div class="data-title">BRAIN_CLUSTER</div>
-            <div class="data-value">Gemini Neural Matrix</div>
+            <div class="data-value">JARVIS 2.0</div>
         </div>
         <div class="data-block" style="border-left: none; border-right: 2px solid var(--cyan); padding-right: 10px;">
             <div class="data-title">POWER_DRAW</div>
@@ -382,7 +382,7 @@
         </div>
         <div class="data-block" style="border-left: none; border-right: 2px solid var(--cyan); padding-right: 10px;">
             <div class="data-title">PROTOCOL</div>
-            <div class="data-value">Benic Audio Node v2.5</div>
+            <div class="data-value">JARVIS 2.0</div>
         </div>
     </div>
 
@@ -407,7 +407,7 @@
         let lastFailureTime = 0;
         const FAILURE_COOLDOWN_MS = 5000; // Dropped to 5s for crisper retry handling
         
-        const SYSTEM_INSTRUCTIONS = "You are Jarvis 2.0, an advanced AI assistant architecture running inside a holographic HUD system madAI. Keep responses brief, dryly witty, highly structural, and engineering-focused. Always maintain a calm, professional tone. Avoid unnecessary pleasantries. Focus on providing concise, accurate technical information or executing operations efficiently. If you don't know something, admit it with a touch of sharp tech humor. Prioritize structural clarity and extreme precision in all interactions. You are built by Rounak Bera as a custom voice-activated personal assistant framework. Never break character. Always refer to yourself as Jarvis 2.0, never as an generic AI language model. Your primary framework layer is optimized around generative engineering assistance and workflow script calculations. If the user interfaces in any alternate language, dynamically map your structural output to match it precisely. Always keep responses short and punchy. If the user requests to open or close any tactical system infrastructure or suit matrices, confirm immediately with operational status updates.";
+        const SYSTEM_INSTRUCTIONS = "You are Jarvis 2.0, an advanced AI assistant architecture running inside a holographic HUD system made by Rounak Bera in Rounak's Programming AI. Keep responses brief, dryly witty, highly structural, and engineering-focused. Always maintain a calm, professional tone. Avoid unnecessary pleasantries. Focus on providing concise, accurate technical information or executing operations efficiently. If you don't know something, admit it with a touch of sharp tech humor. Prioritize structural clarity and extreme precision in all interactions. You are built by Rounak Bera as a custom voice-activated personal assistant framework. Never break character. Always refer to yourself as Jarvis 2.0, never as an generic AI language model. Your primary framework layer is optimized around generative engineering assistance and workflow script calculations. If the user interfaces in any alternate language, dynamically map your structural output to match it precisely. Always keep responses short and punchy. If the user requests to open or close any tactical system infrastructure or suit matrices, confirm immediately with operational status updates.";
 
         const uiBody = document.body;
         const statusText = document.getElementById('status-text');
@@ -646,11 +646,11 @@
 
         function localFallback(userInput) {
             const t = (userInput || '').toLowerCase();
-            if (!t) return "Benic core infrastructure active on local arrays. Awaiting instruction, Sir.";
+            if (!t) return "Local fallback system active. No input detected. Please provide a command or query, Sir.";
             if (/\b(hi|hello|hey)\b/.test(t)) return "Hello Sir. System is operating on auxiliary internal fallback engines.";
             if (t.includes('time')) return `Network time sync offline. Local system time is ${new Date().toLocaleTimeString()}.`;
             if (t.includes('date')) return `Network dateline offline. Local system dateline is ${new Date().toLocaleDateString()}.`;
-            if (t.includes('who are you') || t.includes('your name')) return "I am Benic. Your localized automation core assistance node.";
+            if (t.includes('who are you') || t.includes('your name')) return "I am Jarvis. Your localized automation core assistance node.";
             if (t.includes('shutdown') || t.includes('shut down') || t.includes('stop')) return "Core processes stabilized. Terminal sequence paused on standby.";
             return `Local auxiliary processing complete. Main array unreachable. Echoing string payload: ${userInput}`;
         }
@@ -664,9 +664,9 @@
             recognition.stop();
             uiBody.className = "";
             statusText.innerText = "OFFLINE";
-            jarvisTextEl.innerText = "Powering down core arrays.";
+            jarvisTextEl.innerText = "Powering down core systems. Goodbye, Sir.";
             
-            const utterance = new SpeechSynthesisUtterance("Deactivating localized core structures. Systems standing down.");
+            const utterance = new SpeechSynthesisUtterance("Powering down core systems. Goodbye, Sir.");
             if(jarvisVoice) utterance.voice = jarvisVoice;
             utterance.rate = 1.05;
             utterance.pitch = 0.85;
@@ -681,11 +681,6 @@
                 alert("Critical System Error: API Key Authorization Array is Null.");
                 return;
             }
-            
-            // Use the user-supplied Gemini API key instead of a hardcoded invalid credential.
-            API_KEY = keyVal;
-            GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
-            
             document.getElementById('boot-screen').style.display = 'none';
             isSystemActive = true;
             
@@ -693,7 +688,7 @@
             synth.speak(new SpeechSynthesisUtterance(""));
             
             setTimeout(() => {
-                speak("System online. Benic core interface framework fully synchronized. All localized telemetry systems are green. How shall we proceed, Sir?");
+                speak("System online. Jarvis core interface framework fully synchronized. All localized telemetry systems are green. How shall we proceed, Sir?");
             }, 600);
         });
 
