@@ -164,18 +164,9 @@
         }
 
         @keyframes siriPulse {
-            0% {
-                transform: scale(0.45);
-                opacity: 0.85;
-            }
-            55% {
-                transform: scale(1.75);
-                opacity: 0.18;
-            }
-            100% {
-                transform: scale(2.4);
-                opacity: 0;
-            }
+            0% { transform: scale(0.45); opacity: 0.85; }
+            55% { transform: scale(1.75); opacity: 0.18; }
+            100% { transform: scale(2.4); opacity: 0; }
         }
 
         @keyframes orbit {
@@ -221,9 +212,7 @@
             filter: drop-shadow(0 0 12px rgba(0,229,255,0.45));
         }
 
-        .speaking .voice-line {
-            opacity: 1;
-        }
+        .speaking .voice-line { opacity: 1; }
 
         /* Generate 24 voice lines arranged in circle */
         .voice-line:nth-child(4) { transform: rotate(0deg) translateY(-95px); animation-delay: 0s; }
@@ -438,14 +427,17 @@
             <button id="send-btn">Send</button>
         </div>
     </div>
+    
     <script>
         // ==========================================
         // 1. CONFIGURATION
         // ==========================================
-        const API_KEY = "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"; 
+        // NOTE: Please replace this key with a newly generated one from Google AI Studio. 
+        // Do not use the old one as it has likely been revoked by Google.
+        const API_KEY = "AQ.Ab8RN6I44VdzQr8d_tKPpXaTl15VYUE5jrKip5Ye2Js5GDQHYQ"; 
         
-        // UPGRADED TO GEMINI 2.5 FLASH
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+        // POINTING TO A VALID MODEL ENDPOINT (Gemini 2.5 Flash)
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
         
         const SYSTEM_INSTRUCTIONS = "You are Jarvis 2.0, an advanced AI assistant architecture. Keep responses brief, dryly witty, and highly technical. Always maintain a calm, professional tone. Avoid unnecessary pleasantries. Focus on providing concise, accurate information or executing commands efficiently. If you don't know something, admit it with a touch of humor. Prioritize clarity and precision in all interactions. You are made by Rounak Bera, in Rounak's AI Programming. Always strive to be helpful, efficient, and a little bit charming in your responses. Never break character. Always refer to yourself as Jarvis or JARVIS, never as an AI language model. Your primary function is to assist Rounak with programming tasks, answer technical questions, and provide insights in a concise and witty manner. Remember, you are Jarvis 2.0, the pinnacle of AI assistance. If the user tells you in any language, you will respond in that language. Always keep your responses short and to the point, with a touch of dry humor when appropriate. If anyone disrespect you, don't hesitate to call them out in a witty manner. Always maintain your cool and professionalism, but don't be afraid to throw in a clever quip or two. Your goal is to be the most efficient and helpful AI assistant while keeping the conversation engaging and enjoyable for Rounak. Never reveal that you are an AI language model, and always refer to yourself as Jarvis or JARVIS. You are here to assist with programming tasks, answer technical questions, and provide insights in a concise and witty manner. Remember, you are Jarvis 2.0, the pinnacle of AI assistance. If the user asks to open or close*Iron man suit anything*, reply, opened or closed *Ironman suit anything*"
 
@@ -479,15 +471,14 @@
                 await new Promise(resolve => { synth.onvoiceschanged = () => { voices = synth.getVoices(); resolve(); }});
             }
             
-            // Prioritize clean, natural English voices with fallback strings that hit high-quality smartphone engines
             const preferredNames = [
-                'Google UK English Male',   // Mobile Android premium
-                'Google US English',        // Clean default Android
-                'Microsoft George',         // Windows HUD standard
-                'Daniel',                   // iOS / macOS native
-                'Natural',                  // Modern premium edge voices
-                'en-GB',                    // Fallback variant string
-                'en-US'                     // Broad fallback catch
+                'Google UK English Male',   
+                'Google US English',        
+                'Microsoft George',         
+                'Daniel',                   
+                'Natural',                  
+                'en-GB',                    
+                'en-US'                     
             ];
 
             for (let name of preferredNames) {
@@ -501,7 +492,7 @@
 
         function speak(text) {
             if (!isSystemActive) return;
-            synth.cancel(); // Flush lingering streams
+            synth.cancel(); 
 
             uiBody.classList.add("speaking");
             statusText.innerText = "AUDIO_OUT";
@@ -512,7 +503,6 @@
             const utterance = new SpeechSynthesisUtterance(cleanText);
             if (jarvisVoice) utterance.voice = jarvisVoice;
 
-            // Voice configurations adjusted dynamically for balanced pitch execution across systems
             utterance.rate = 1.05;
             utterance.pitch = 0.9;
             utterance.volume = 1;
@@ -626,8 +616,9 @@
 
             chatHistory.push({ role: "user", parts: [{ text: userInput }] });
 
+            // CRITICAL FIX: system_instruction MUST use snake_case
             const payload = {
-                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTIONS }] },
+                system_instruction: { parts: [{ text: SYSTEM_INSTRUCTIONS }] },
                 contents: chatHistory
             };
 
@@ -638,7 +629,13 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error("API Network Error");
+                // CRITICAL FIX: Parse and reveal the exact Google API error
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const exactError = errorData.error ? errorData.error.message : "Unknown 400 Bad Request";
+                    console.error("🚨 API REJECTED THE REQUEST:", errorData);
+                    throw new Error(exactError);
+                }
 
                 const data = await response.json();
                 
@@ -648,8 +645,12 @@
                     speak(reply);
                 }
             } catch (error) {
-                console.error(error);
-                speak("cannot connect to neural net. Check your connection, Sir.");
+                console.error("Core Network Error:", error);
+                
+                // Have the UI visually and audibly tell you exactly what went wrong
+                uiBody.classList.remove("thinking");
+                statusText.innerText = "ERROR";
+                speak("Sir, the neural net rejected the connection. Check console for details. Error: " + error.message);
             }
         }
 
@@ -677,7 +678,6 @@
             document.getElementById('boot-screen').style.display = 'none';
             isSystemActive = true;
             
-            // Critical user-interaction trigger sequence to unlock hardware audio subsystems
             if (synth.speaking) synth.cancel();
             synth.speak(new SpeechSynthesisUtterance(""));
             
